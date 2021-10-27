@@ -24,16 +24,35 @@ class Button(QPushButton):
 	"""Override existsing QPushButton for custom hover events"""
 	def __init__(self, parent, text=""):
 		super().__init__(parent=parent)  # Initialize button
+		self.letter_spacing = "2px"  # Set letter spacing variable
 		self.setText(text)  # Set text content
-		self.setStyleSheet("background-color: white; border: none;")  # Set QSS stylesheet attributes
+		self.setFont(QFont("Impact", 15))  # Set text font
+		self.setCursor(Qt.PointingHandCursor)
+		self.setStyleSheet("background-color: white; border: none; letter-spacing: 2px;")  # Set QSS stylesheet attributes
 
 	def enterEvent(self, event):
 		"""Mouse hover in event"""
+		self.letter_spacing = "3.5px"  # Change letter spacing
 		super().enterEvent(event)
 
 	def leaveEvent(self, event):
 		"""Mouse hover out event"""
+		self.letter_spacing = "2px"  # Revert letter spacing
 		super().leaveEvent(event)
+
+	def mousePressEvent(self, event):
+		"""Mouse press event"""
+		super().mousePressEvent(event)
+
+	def mouseReleaseEvent(self, event):
+		"""Mouse release event"""
+		super().mouseReleaseEvent(event)
+
+	def setBackgroundColor(self, color: QColor):
+		"""Background color animation"""
+		self.setStyleSheet(f"background-color: rgba{color.getRgb()}; border: none; letter-spacing: {self.letter_spacing};")
+
+	background = pyqtProperty(QColor, fset=setBackgroundColor)
 
 
 class GameWindow(QWidget):
@@ -50,13 +69,21 @@ class MainWindow(QWidget):
 		# Title animation
 		self.title_animation = QPropertyAnimation(self.title, b"color")  # Create animation
 		self.title_animation.setLoopCount(1)  # Set loop count
-		self.title_animation.setDuration(10000)  # Set loop duration
+		self.title_animation.setDuration(15000)  # Set loop duration
 		self.title_animation.setStartValue(QColor("#0000FF"))  # Set start color
 		self.title_animation.setEndValue(QColor("#AA00FF"))  # Set end color
 		self.title_animation.finished.connect(lambda: self.changeAnimationDirection(self.title_animation))  # Call lambda: sel... when animation finishes
 		self.title_animation.start()  # Start animation
 		# Start button
 		self.start_button = Button(self, "Start Game")
+		# Start button animation
+		self.button_animation = QPropertyAnimation(self.start_button, b"background")  # Create animation
+		self.button_animation.setLoopCount(1)  # Set loop count
+		self.button_animation.setDuration(45000)  # Set loop duration
+		self.button_animation.setStartValue(QColor("#88FFFF"))  # Set start color
+		self.button_animation.setEndValue(QColor("#0000FF"))  # Set end color
+		self.button_animation.finished.connect(lambda: self.changeAnimationDirection(self.button_animation))  # Call function when animation finishes
+		self.button_animation.start()  # Start animation
 
 	def changeAnimationDirection(self, animation):
 		animation.setDirection(int(not animation.direction()))  # Invert animation direction
@@ -78,6 +105,7 @@ class Window(QMainWindow):
 		super(Window, self).__init__()  # Initialize window
 		self.setMinimumSize(QSize(1080, 720))  # Set window minimum size
 		self.setWindowTitle("LightCycle")  # Set window title
+		self.setStyleSheet("background-color: white;")  # Change background color
 		self.stacked_pages = QStackedWidget(self)  # Add stacked widget
 		self.pages = {
 			"main": MainWindow(self),

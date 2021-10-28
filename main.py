@@ -79,9 +79,10 @@ class GameWindow(QWidget):
 class MainWindow(QWidget):
 	def __init__(self, parent):
 		super().__init__(parent=parent)  # Initialize page
+		self.resize_function = self.initialResize
 		# Title
 		self.title = Text(self, "LightCycle")  # Add title
-		self.title.setAlignment(Qt.AlignCenter)  # Set title alignment
+		self.title.setAlignment(Qt.AlignCenter)
 		# Title animation
 		self.title_animation = QPropertyAnimation(self.title, b"color")  # Create animation
 		self.title_animation.setLoopCount(1)  # Set loop count
@@ -90,6 +91,7 @@ class MainWindow(QWidget):
 		self.title_animation.setEndValue(QColor("#AA00FF"))  # Set end color
 		self.title_animation.finished.connect(lambda: self.changeAnimationDirection(self.title_animation))  # Call lambda: sel... when animation finishes
 		self.title_animation.start()  # Start animation
+		self.title.show()  # Show title
 		# Start button
 		self.start_button = Button(self, "Start Game", mouse_press_event=self.start)
 		# Start button animation
@@ -97,9 +99,10 @@ class MainWindow(QWidget):
 		self.button_animation.setLoopCount(1)  # Set loop count
 		self.button_animation.setDuration(45000)  # Set loop duration
 		self.button_animation.setStartValue(QColor("#88FFFF"))  # Set start color
-		self.button_animation.setEndValue(QColor("#0000FF"))  # Set end color
+		self.button_animation.setEndValue(QColor("#5555FF"))  # Set end color
 		self.button_animation.finished.connect(lambda: self.changeAnimationDirection(self.button_animation))  # Call function when animation finishes
 		self.button_animation.start()  # Start animation
+		self.start_button.show()  # Show start button
 
 	def start(self):
 		"""First phase of starting game"""
@@ -142,14 +145,52 @@ class MainWindow(QWidget):
 		animation.setDirection(int(not animation.direction()))  # Invert animation direction
 		animation.start()  # Restart animation
 
-	def resizeEvent(self, event):
-		"""Window resize event"""
+	def onResize(self, event):
+		"""Normal resize event"""
 		# Title
 		self.title.setFont(QFont("Impact", event.size().width() // 12))  # Enlarge/shrink the title font size
 		self.title.resize(QSize(event.size().width(), event.size().height() // 5))  # Resize title
 		# Start button
 		self.start_button.resize(QSize(event.size().width() // 7, event.size().height() // 10))  # Resize start button according to the new window size. This statement has to be before the button move statement (on the next line)
 		self.start_button.move(QPoint((event.size().width() // 2) - (self.start_button.width() // 2), event.size().height() // 2))  # Move start button to center of screen
+
+	def initialResize(self, event):
+		"""First resize event"""
+		self.resize_function = self.onResize  # Change resize function pointer
+		# Window background color animation
+		self.window_color_animation = QPropertyAnimation(self.parent().parent(), b"background")  # Create animation
+		self.window_color_animation.setLoopCount(1)  # Set loop count
+		self.window_color_animation.setDuration(1150)  # Set animation duration
+		self.window_color_animation.setStartValue(QColor("#FFFFFF"))  # Set start value
+		self.window_color_animation.setEndValue(QColor("#000000"))  # Set end value
+		self.window_color_animation.start()  # Start animation
+		# Title
+		self.title.setFont(QFont("Impact", event.size().width() // 12))  # Enlarge/shrink the title font size
+		self.title.resize(QSize(event.size().width(), event.size().height() // 5))  # Resize title
+		# Start button
+		self.start_button.resize(QSize(event.size().width() // 7, event.size().height() // 10))  # Resize start button according to the new window size. This statement has to be before the button move statement (on the next line)
+		self.start_button.move(QPoint(-self.start_button.width(), self.height() // 2))  # Move start button
+		# Title animation
+		self.title_slide_animation = QPropertyAnimation(self.title, b"pos")  # Create animation
+		self.title_slide_animation.setLoopCount(1)  # Set loop count
+		self.title_slide_animation.setDuration(750)  # Set animation duration
+		self.title_slide_animation.setStartValue(QPoint(-self.title.width(), 0))  # Set start point
+		self.title_slide_animation.setEndValue(QPoint(0, 0))  # Set end point
+		self.title_slide_animation.finished.connect(self.startButtonAnimation)  # Start button animation when title slide animation is finished
+		self.title_slide_animation.start()  # Start animation
+
+	def startButtonAnimation(self):
+		"""Start button slide-in animation"""
+		self.start_button_animation = QPropertyAnimation(self.start_button, b"pos")  # Create animation
+		self.start_button_animation.setLoopCount(1)  # Set loop count
+		self.start_button_animation.setDuration(500)  # Set animation duration
+		self.start_button_animation.setStartValue(QPoint(-self.start_button.width(), self.height() // 2))  # Set start point
+		self.start_button_animation.setEndValue(QPoint((self.width() // 2) - (self.start_button.width() // 2), self.height() // 2))  # Set end point
+		self.start_button_animation.start()  # Start animation
+
+	def resizeEvent(self, event):
+		"""Window resize event"""
+		self.resize_function(event)
 		super().resizeEvent(event)
 
 
@@ -173,6 +214,13 @@ class Window(QMainWindow):
 	def resizeEvent(self, event):
 		"""Window resize event"""
 		self.stacked_pages.resize(event.size())
+
+	def setBackgroundColor(self, color: QColor):
+		"""Background color animation"""
+		self.background_color = color  # Update background color variable
+		self.setStyleSheet(f"background-color: rgba{color.getRgb()};")  # Update stylesheet
+
+	background = pyqtProperty(QColor, fset=setBackgroundColor)
 
 
 application, window = QApplication([]), Window()  # Create new QApplication and instance of Window()
